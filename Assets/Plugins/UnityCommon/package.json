@@ -1,0 +1,9 @@
+{
+  "name": "com.k3sy.unitycommon",
+  "version": "0.0.1",
+  "displayName": "UnityCommon",
+  "description": "Common libraries for Unity.",
+  "unity": "2022.3",
+  "author": "Kenzo Someya",
+  "license": "MIT"
+}
