@@ -11,7 +11,7 @@ namespace UnityCommon
     public static class UnityObjectExtensions
     {
         /// <summary>
-        /// Unityオブジェクトを編集モードと再生モードのどちらで実行しているかに応じて適切に破棄する。
+        /// Unityオブジェクトを編集モードと再生モードのどちらで実行しているかに応じて適切に破棄する
         /// </summary>
         /// <param name="obj">破棄するUnityオブジェクト</param>
         /// <param name="t">オブジェクトを破棄するまでの時間（秒単位）</param>

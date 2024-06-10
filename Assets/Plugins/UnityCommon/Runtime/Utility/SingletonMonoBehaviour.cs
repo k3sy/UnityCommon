@@ -10,7 +10,7 @@ namespace UnityCommon
         private static T _Instance;
 
         /// <summary>
-        /// シングルトンのインスタンスを取得する。
+        /// シングルトンのインスタンスを取得する
         /// </summary>
         public static T Instance
         {
@@ -31,7 +31,7 @@ namespace UnityCommon
         }
 
         /// <summary>
-        /// シングルトンのインスタンスが存在するかどうかを判定する。
+        /// シングルトンのインスタンスが存在するかどうかを判定する
         /// </summary>
         public static bool Exists => _Instance != null;
 
