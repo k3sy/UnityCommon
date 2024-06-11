@@ -264,14 +264,19 @@ namespace UnityCommon
                 return;
             }
 
-            int startIndex = CalcStartIndex();
+            int startIndex = (int)((-ContentPosition - Margin) / (ItemSize + _ItemSpacing));
+            if (IsInfiniteScroll) {
+                if (startIndex <= 0) { startIndex -= 1; }
+            } else {
+                if (startIndex < 0) { startIndex = 0; }
+            }
+
             int endIndex;
             for (endIndex = startIndex; ; endIndex++) {
-                if (!IsInfiniteScroll && endIndex == _ItemDatas.Count) { break; }
                 float itemPosition = CalcItemPosition(endIndex);
-                int itemSide = GetItemPositionSide(itemPosition);
-                if (itemSide < 0) { continue; }
-                if (itemSide > 0) { break; }
+                if (itemPosition <= -(ItemSize + _ItemSpacing)) { continue; }
+                if (ViewSize + _ItemSpacing <= itemPosition) { break; }
+                if (!IsInfiniteScroll && endIndex == _ItemDatas.Count) { break; }
             }
 
             LinkedListNode<ListItemView> node = _VisibleItemViews.First;
@@ -319,16 +324,6 @@ namespace UnityCommon
             _VisibleItemViews.Remove(itemView);
         }
 
-        private float GetItemViewPosition(ListItemView itemView)
-        {
-            var rt = itemView.transform as RectTransform;
-            if (_Direction == Direction.Horizontal) {
-                return ContentPosition + rt.anchoredPosition.x;
-            } else {
-                return ContentPosition - rt.anchoredPosition.y;
-            }
-        }
-
         private void SetItemViewPosition(ListItemView itemView, float itemPosition)
         {
             var rt = itemView.transform as RectTransform;
@@ -350,27 +345,9 @@ namespace UnityCommon
             }
         }
 
-        private int CalcStartIndex()
-        {
-            int startIndex = (int)((-ContentPosition - Margin) / (ItemSize + _ItemSpacing));
-            if (IsInfiniteScroll) {
-                if (startIndex <= 0) { startIndex -= 1; }
-            } else {
-                if (startIndex < 0) { startIndex = 0; }
-            }
-            return startIndex;
-        }
-
         private float CalcItemPosition(int itemIndex)
         {
             return ContentPosition + Margin + (ItemSize + _ItemSpacing) * itemIndex;
-        }
-
-        private int GetItemPositionSide(float itemPosition)
-        {
-            if (itemPosition <= -(ItemSize + _ItemSpacing)) { return -1; }
-            if (ViewSize + _ItemSpacing <= itemPosition) { return 1; }
-            return 0;
         }
     }
 }
