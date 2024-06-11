@@ -22,7 +22,7 @@ namespace UnityCommon
         private readonly List<IListItemData> _ItemDatas = new();
         private readonly LinkedList<ListItemView> _VisibleItemViews = new();
         private ObjectPool<ListItemView> _ItemViewPool;
-        private bool _NeedToRefresh;
+        private bool _NeedToRefreshListView;
 
         private float ContentPosition => _Direction == Direction.Horizontal ? content.anchoredPosition.x : -content.anchoredPosition.y;
 
@@ -80,7 +80,8 @@ namespace UnityCommon
 
             _ItemDatas.Add(itemData);
 
-            _NeedToRefresh = true;
+            RefreshContentSize();
+            _NeedToRefreshListView = true;
         }
 
         /// <summary>
@@ -120,20 +121,21 @@ namespace UnityCommon
 
             _ItemDatas.Insert(dataIndex, itemData);
 
-            _NeedToRefresh = true;
+            RefreshContentSize();
+            _NeedToRefreshListView = true;
         }
 
         /// <summary>
-        /// 指定したデータを削除する
+        /// 指定した位置のデータを削除する
         /// </summary>
-        /// <param name="itemData"></param>
-        public void RemoveItemData(IListItemData itemData)
+        /// <param name="dataIndex"></param>
+        public void RemoveItemData(int dataIndex)
         {
-            if (!_ItemDatas.Contains(itemData)) {
+            if (dataIndex < 0 || dataIndex >= _ItemDatas.Count) {
                 return;
             }
 
-            int dataIndex = _ItemDatas.IndexOf(itemData);
+            IListItemData itemData = _ItemDatas[dataIndex];
 
             LinkedListNode<ListItemView> node = _VisibleItemViews.First;
             while (node != null) {
@@ -160,7 +162,18 @@ namespace UnityCommon
 
             _ItemDatas.Remove(itemData);
 
-            _NeedToRefresh = true;
+            RefreshContentSize();
+            _NeedToRefreshListView = true;
+        }
+
+        /// <summary>
+        /// 指定したデータを削除する
+        /// </summary>
+        /// <param name="itemData"></param>
+        public void RemoveItemData(IListItemData itemData)
+        {
+            int dataIndex = _ItemDatas.IndexOf(itemData);
+            RemoveItemData(dataIndex);
         }
 
         /// <summary>
@@ -177,7 +190,8 @@ namespace UnityCommon
 
             _ItemDatas.Clear();
 
-            _NeedToRefresh = true;
+            RefreshContentSize();
+            _NeedToRefreshListView = true;
         }
 
         protected override void Start()
@@ -214,7 +228,7 @@ namespace UnityCommon
 
         private void OnValueChanged(Vector2 value)
         {
-            _NeedToRefresh = true;
+            _NeedToRefreshListView = true;
         }
 
         protected override void OnDestroy()
@@ -226,97 +240,12 @@ namespace UnityCommon
 
         private void Update()
         {
-            if (!IsActive() || !_NeedToRefresh) {
+            if (!IsActive() || !_NeedToRefreshListView) {
                 return;
             }
-            _NeedToRefresh = false;
+            _NeedToRefreshListView = false;
 
-            RefreshContentSize();
             RefreshListView();
-        }
-
-        private int CalcItemDataIndex(int itemIndex)
-        {
-            if (IsInfiniteScroll) {
-                return itemIndex < 0 ?
-                    _ItemDatas.Count - 1 + ((itemIndex + 1) % _ItemDatas.Count) :
-                    itemIndex % _ItemDatas.Count;
-            } else {
-                return Mathf.Clamp(itemIndex, 0, _ItemDatas.Count - 1);
-            }
-        }
-
-        private int CalcStartIndex()
-        {
-            int startIndex = (int)((-ContentPosition - Margin) / (ItemSize + _ItemSpacing));
-            if (IsInfiniteScroll) {
-                if (startIndex <= 0) { startIndex -= 1; }
-            } else {
-                if (startIndex < 0) { startIndex = 0; }
-            }
-            return startIndex;
-        }
-
-        private float CalcItemPosition(int itemIndex)
-        {
-            return ContentPosition + Margin + (ItemSize + _ItemSpacing) * itemIndex;
-        }
-
-        private int GetItemPositionSide(float itemPosition)
-        {
-            if (itemPosition <= -(ItemSize + _ItemSpacing)) { return -1; }
-            if (ViewSize + _ItemSpacing <= itemPosition) { return 1; }
-            return 0;
-        }
-
-        private float GetItemViewPosition(ListItemView itemView)
-        {
-            var rt = itemView.transform as RectTransform;
-            if (_Direction == Direction.Horizontal) {
-                return ContentPosition + rt.anchoredPosition.x;
-            } else {
-                return ContentPosition - rt.anchoredPosition.y;
-            }
-        }
-
-        private void SetItemViewPosition(ListItemView itemView, float itemPosition)
-        {
-            var rt = itemView.transform as RectTransform;
-            if (_Direction == Direction.Horizontal) {
-                rt.anchoredPosition = new Vector2(itemPosition - ContentPosition, rt.anchoredPosition.y);
-            } else {
-                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, -(itemPosition - ContentPosition));
-            }
-        }
-
-        private void SetVisibleItemView(int itemIndex, float itemPosition)
-        {
-            ListItemView itemView = _VisibleItemViews.FirstOrDefault(itemView => itemView.Index == itemIndex);
-            if (itemView != null) {
-                SetItemViewPosition(itemView, itemPosition);
-            } else {
-                itemView = _ItemViewPool.Get();
-                SetItemViewPosition(itemView, itemPosition);
-                itemView.Index = itemIndex;
-                itemView.Data = _ItemDatas[CalcItemDataIndex(itemIndex)];
-                itemView.OnVisible();
-                LinkedListNode<ListItemView> prevNode = _VisibleItemViews.Nodes()
-                    .Where(node => node.Value.Index < itemIndex)
-                    .OrderBy(node => node.Value.Index)
-                    .LastOrDefault();
-                if (prevNode != null) {
-                    _VisibleItemViews.AddAfter(prevNode, itemView);
-                } else {
-                    _VisibleItemViews.AddFirst(itemView);
-                }
-            }
-        }
-
-        private void RemoveVisibleItemView(ListItemView itemView)
-        {
-            itemView.OnInvisible();
-            _ItemViewPool.Release(itemView);
-            _VisibleItemViews.Remove(itemView);
         }
 
         private void RefreshContentSize()
@@ -358,6 +287,90 @@ namespace UnityCommon
                 float itemPosition = CalcItemPosition(itemIndex);
                 SetVisibleItemView(itemIndex, itemPosition);
             }
+        }
+
+        private void SetVisibleItemView(int itemIndex, float itemPosition)
+        {
+            ListItemView itemView = _VisibleItemViews.FirstOrDefault(itemView => itemView.Index == itemIndex);
+            if (itemView != null) {
+                SetItemViewPosition(itemView, itemPosition);
+            } else {
+                itemView = _ItemViewPool.Get();
+                SetItemViewPosition(itemView, itemPosition);
+                itemView.Index = itemIndex;
+                itemView.Data = _ItemDatas[CalcItemDataIndex(itemIndex)];
+                itemView.OnVisible();
+                LinkedListNode<ListItemView> prevNode = _VisibleItemViews.Nodes()
+                    .Where(node => node.Value.Index < itemIndex)
+                    .OrderBy(node => node.Value.Index)
+                    .LastOrDefault();
+                if (prevNode != null) {
+                    _VisibleItemViews.AddAfter(prevNode, itemView);
+                } else {
+                    _VisibleItemViews.AddFirst(itemView);
+                }
+            }
+        }
+
+        private void RemoveVisibleItemView(ListItemView itemView)
+        {
+            itemView.OnInvisible();
+            _ItemViewPool.Release(itemView);
+            _VisibleItemViews.Remove(itemView);
+        }
+
+        private float GetItemViewPosition(ListItemView itemView)
+        {
+            var rt = itemView.transform as RectTransform;
+            if (_Direction == Direction.Horizontal) {
+                return ContentPosition + rt.anchoredPosition.x;
+            } else {
+                return ContentPosition - rt.anchoredPosition.y;
+            }
+        }
+
+        private void SetItemViewPosition(ListItemView itemView, float itemPosition)
+        {
+            var rt = itemView.transform as RectTransform;
+            if (_Direction == Direction.Horizontal) {
+                rt.anchoredPosition = new Vector2(itemPosition - ContentPosition, rt.anchoredPosition.y);
+            } else {
+                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, -(itemPosition - ContentPosition));
+            }
+        }
+
+        private int CalcItemDataIndex(int itemIndex)
+        {
+            if (IsInfiniteScroll) {
+                return itemIndex < 0 ?
+                    _ItemDatas.Count - 1 + ((itemIndex + 1) % _ItemDatas.Count) :
+                    itemIndex % _ItemDatas.Count;
+            } else {
+                return Mathf.Clamp(itemIndex, 0, _ItemDatas.Count - 1);
+            }
+        }
+
+        private int CalcStartIndex()
+        {
+            int startIndex = (int)((-ContentPosition - Margin) / (ItemSize + _ItemSpacing));
+            if (IsInfiniteScroll) {
+                if (startIndex <= 0) { startIndex -= 1; }
+            } else {
+                if (startIndex < 0) { startIndex = 0; }
+            }
+            return startIndex;
+        }
+
+        private float CalcItemPosition(int itemIndex)
+        {
+            return ContentPosition + Margin + (ItemSize + _ItemSpacing) * itemIndex;
+        }
+
+        private int GetItemPositionSide(float itemPosition)
+        {
+            if (itemPosition <= -(ItemSize + _ItemSpacing)) { return -1; }
+            if (ViewSize + _ItemSpacing <= itemPosition) { return 1; }
+            return 0;
         }
     }
 }
