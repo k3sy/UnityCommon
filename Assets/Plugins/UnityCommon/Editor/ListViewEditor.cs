@@ -12,6 +12,8 @@ namespace UnityCommon
         private SerializedProperty _Margin;
         private SerializedProperty _Direction;
 
+        private ListView _ListView;
+
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -20,6 +22,8 @@ namespace UnityCommon
             _ItemSpacing = serializedObject.FindProperty("_ItemSpacing");
             _Margin = serializedObject.FindProperty("_Margin");
             _Direction = serializedObject.FindProperty("_Direction");
+
+            _ListView = target as ListView;
         }
 
         public override void OnInspectorGUI()
@@ -28,7 +32,9 @@ namespace UnityCommon
 
             EditorGUILayout.PropertyField(_ItemViewTemplate);
             EditorGUILayout.PropertyField(_ItemSpacing);
-            EditorGUILayout.PropertyField(_Margin);
+            if (!_ListView.IsInfiniteScroll) {
+                EditorGUILayout.PropertyField(_Margin);
+            }
             EditorGUILayout.PropertyField(_Direction);
 
             EditorGUILayout.Space();
