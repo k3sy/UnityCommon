@@ -27,9 +27,9 @@ namespace UnityCommon
         private void Update()
         {
 #if !UNITY_EDITOR
-        if (_Camera.aspect == _LastAspect) {
-            return;
-        }
+            if (_Camera.aspect == _LastAspect) {
+                return;
+            }
 #endif
             AdjustCameraSize();
         }

@@ -41,9 +41,9 @@ namespace UnityCommon
         private void Update()
         {
 #if !UNITY_EDITOR
-        if (Screen.safeArea == _LastSafeArea) {
-            return;
-        }
+            if (Screen.safeArea == _LastSafeArea) {
+                return;
+            }
 #endif
             ApplySafeArea();
         }
