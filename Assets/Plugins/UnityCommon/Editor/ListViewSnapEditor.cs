@@ -19,17 +19,16 @@ namespace UnityCommon
 
         public override void OnInspectorGUI()
         {
-            serializedObject.Update();
-            EditorGUILayout.LabelField("Snap Settings", EditorStyles.boldLabel);
-            using (new EditorGUI.IndentLevelScope()) {
-                EditorGUILayout.PropertyField(_LerpDuration);
-                EditorGUILayout.PropertyField(_OnChangeItemData);
-            }
-            serializedObject.ApplyModifiedProperties();
+            base.OnInspectorGUI();
 
             EditorGUILayout.Space();
 
-            base.OnInspectorGUI();
+            serializedObject.Update();
+
+            EditorGUILayout.PropertyField(_LerpDuration);
+            EditorGUILayout.PropertyField(_OnChangeItemData);
+
+            serializedObject.ApplyModifiedProperties();
         }
     }
 }

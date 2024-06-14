@@ -3,13 +3,14 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace UnityCommon
 {
     /// <summary>
     /// スナップスクロールするリストビュー
     /// </summary>
-    public class ListViewSnap : ListView
+    public class ListViewSnap : ListView, IBeginDragHandler, IEndDragHandler
     {
         [SerializeField] private float _LerpDuration = 0.2f;
 
@@ -73,19 +74,15 @@ namespace UnityCommon
             _State = State.Idle;
         }
 
-        public override void OnBeginDrag(PointerEventData eventData)
+        public virtual void OnBeginDrag(PointerEventData eventData)
         {
-            base.OnBeginDrag(eventData);
-
             if (eventData.button == PointerEventData.InputButton.Left && IsActive()) {
                 _State = State.Dragging;
             }
         }
 
-        public override void OnEndDrag(PointerEventData eventData)
+        public virtual void OnEndDrag(PointerEventData eventData)
         {
-            base.OnEndDrag(eventData);
-
             if (eventData.button == PointerEventData.InputButton.Left && _State == State.Dragging) {
                 _State = State.Idle;
             }
@@ -99,7 +96,7 @@ namespace UnityCommon
                 return;
             }
 
-            if (movementType == MovementType.Elastic) {
+            if (ScrollRect.movementType == ScrollRect.MovementType.Elastic) {
                 if (ContentPosition > 0.01f || ContentPosition + Mathf.Max(ContentSize - ViewSize, 0) < -0.01f) {
                     return;
                 }
@@ -118,19 +115,19 @@ namespace UnityCommon
             switch (_State) {
                 case State.Idle:
                     if (snapDistance <= 0.01f) { break; }
-                    if (velocity.magnitude > snapDistance / _LerpDuration) { break; }
-                    StopMovement();
+                    if (ScrollRect.velocity.magnitude > snapDistance / _LerpDuration) { break; }
+                    ScrollRect.StopMovement();
                     StartLerping(ContentPosition + snapVector);
                     break;
                 case State.JumpTo: {
-                    StopMovement();
+                    ScrollRect.StopMovement();
                     int snapItemIndex = GetSnapItemIndex(_DestItemData);
                     ContentPosition = GetSnappedContentPosition(snapPosition, snapItemIndex);
                     _State = State.Idle;
                     break;
                 }
                 case State.MoveTo: {
-                    StopMovement();
+                    ScrollRect.StopMovement();
                     int snapItemIndex = GetSnapItemIndex(_DestItemData);
                     float endPosition = GetSnappedContentPosition(snapPosition, snapItemIndex);
                     StartLerping(endPosition);

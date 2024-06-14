@@ -8,7 +8,30 @@ namespace UnityCommon
     /// </summary>
     public class ListItemView : UIBehaviour
     {
+        private RectTransform _Rect;
+        /// <summary>
+        /// 要素の矩形情報
+        /// </summary>
+        protected internal RectTransform Rect
+        {
+            get {
+                if (_Rect == null) { _Rect = GetComponent<RectTransform>(); }
+                return _Rect;
+            }
+        }
+
         private ListView _ListView;
+        /// <summary>
+        /// 要素を保持するListView
+        /// </summary>
+        /// <value></value>
+        protected ListView ListView
+        {
+            get {
+                if (_ListView == null) { _ListView = GetComponentInParent<ListView>(); }
+                return _ListView;
+            }
+        }
 
         /// <summary>
         /// 要素のインデックス
@@ -26,40 +49,32 @@ namespace UnityCommon
         public float Position
         {
             get {
-                var rt = transform as RectTransform;
-                return _ListView.Direction == ListDirection.Horizontal ?
-                    rt.anchoredPosition.x + _ListView.content.anchoredPosition.x :
-                    -(rt.anchoredPosition.y + _ListView.content.anchoredPosition.y);
+                return ListView.Direction == ListDirection.Horizontal ?
+                    Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x :
+                    -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y);
             }
             internal set {
-                var rt = transform as RectTransform;
-                Vector2 temp = rt.anchoredPosition;
-                if (_ListView.Direction == ListDirection.Horizontal) {
-                    temp.x = value - _ListView.content.anchoredPosition.x;
+                Vector2 temp = Rect.anchoredPosition;
+                if (ListView.Direction == ListDirection.Horizontal) {
+                    temp.x = value - ListView.ScrollRect.content.anchoredPosition.x;
                 } else {
-                    temp.y = -value - _ListView.content.anchoredPosition.y;
+                    temp.y = -value - ListView.ScrollRect.content.anchoredPosition.y;
                 }
-                rt.anchoredPosition = temp;
+                Rect.anchoredPosition = temp;
             }
         }
 
         /// <summary>
         /// ListView上の中心位置
         /// </summary>
-        public float Center => Position + _ListView.ItemSize * 0.5f;
-
-        protected override void Awake()
-        {
-            base.Awake();
-
-            _ListView = GetComponentInParent<ListView>();
-        }
+        public float Center => Position + ListView.ItemSize * 0.5f;
 
         protected override void OnDestroy()
         {
             base.OnDestroy();
 
             _ListView = null;
+            _Rect = null;
         }
 
         /// <summary>

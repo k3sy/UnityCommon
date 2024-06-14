@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Pool;
 using UnityEngine.UI;
 
@@ -15,7 +16,9 @@ namespace UnityCommon
     /// <summary>
     /// 必要最低限の要素を再利用する軽量なリストビュー
     /// </summary>
-    public class ListView : ScrollRect
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(ScrollRect))]
+    public class ListView : UIBehaviour
     {
         [SerializeField] private ListItemView _ItemViewTemplate;
         [SerializeField] private float _ItemSpacing;
@@ -27,16 +30,36 @@ namespace UnityCommon
         private ObjectPool<ListItemView> _ItemViewPool;
         private bool _NeedToRefresh;
 
+        private RectTransform _Rect;
+        /// <summary>
+        /// リストビューの矩形情報
+        /// </summary>
+        protected RectTransform Rect
+        {
+            get {
+                if (_Rect == null) { _Rect = GetComponent<RectTransform>(); }
+                return _Rect;
+            }
+        }
+
+        private ScrollRect _ScrollRect;
+        /// <summary>
+        /// リストビューを構築するScrollRect
+        /// </summary>
+        protected internal ScrollRect ScrollRect
+        {
+            get {
+                if (_ScrollRect == null) { _ScrollRect = GetComponent<ScrollRect>(); }
+                return _ScrollRect;
+            }
+        }
+
         /// <summary>
         /// 要素のサイズ
         /// </summary>
-        protected internal float ItemSize
-        {
-            get {
-                var rt = _ItemViewTemplate.transform as RectTransform;
-                return _Direction == ListDirection.Horizontal ? rt.sizeDelta.x : rt.sizeDelta.y;
-            }
-        }
+        protected internal float ItemSize => _Direction == ListDirection.Horizontal ?
+            _ItemViewTemplate.Rect.sizeDelta.x :
+            _ItemViewTemplate.Rect.sizeDelta.y;
 
         /// <summary>
         /// 要素ごとの間隔
@@ -46,7 +69,9 @@ namespace UnityCommon
         /// <summary>
         /// 余白のサイズ
         /// </summary>
-        protected float Margin => movementType == MovementType.Unrestricted ? _ItemSpacing * 0.5f : _Margin;
+        protected float Margin => ScrollRect.movementType == ScrollRect.MovementType.Unrestricted ?
+            _ItemSpacing * 0.5f :
+            _Margin;
 
         /// <summary>
         /// リストの方向
@@ -80,24 +105,22 @@ namespace UnityCommon
         /// <summary>
         /// リストビューのサイズ
         /// </summary>
-        protected float ViewSize
-        {
-            get {
-                var rt = transform as RectTransform;
-                return _Direction == ListDirection.Horizontal ? rt.sizeDelta.x : rt.sizeDelta.y;
-            }
-        }
+        protected float ViewSize => _Direction == ListDirection.Horizontal ?
+            Rect.sizeDelta.x :
+            Rect.sizeDelta.y;
 
         /// <summary>
         /// コンテンツ領域のサイズ
         /// </summary>
         protected float ContentSize
         {
-            get => _Direction == ListDirection.Horizontal ? content.sizeDelta.x : content.sizeDelta.y;
+            get => _Direction == ListDirection.Horizontal ?
+                ScrollRect.content.sizeDelta.x :
+                ScrollRect.content.sizeDelta.y;
             private set {
-                Vector2 temp = content.sizeDelta;
+                Vector2 temp = ScrollRect.content.sizeDelta;
                 if (_Direction == ListDirection.Horizontal) { temp.x = value; } else { temp.y = value; }
-                content.sizeDelta = temp;
+                ScrollRect.content.sizeDelta = temp;
             }
         }
 
@@ -106,11 +129,13 @@ namespace UnityCommon
         /// </summary>
         protected float ContentPosition
         {
-            get => _Direction == ListDirection.Horizontal ? content.anchoredPosition.x : -content.anchoredPosition.y;
+            get => _Direction == ListDirection.Horizontal ?
+                ScrollRect.content.anchoredPosition.x :
+                -ScrollRect.content.anchoredPosition.y;
             set {
-                Vector2 temp = content.anchoredPosition;
+                Vector2 temp = ScrollRect.content.anchoredPosition;
                 if (_Direction == ListDirection.Horizontal) { temp.x = value; } else { temp.y = -value; }
-                content.anchoredPosition = temp;
+                ScrollRect.content.anchoredPosition = temp;
             }
         }
 
@@ -250,23 +275,32 @@ namespace UnityCommon
         {
             base.Start();
 
-            horizontal = _Direction == ListDirection.Horizontal;
-            vertical = _Direction == ListDirection.Vertical;
+            ScrollRect.horizontal = _Direction == ListDirection.Horizontal;
+            ScrollRect.vertical = _Direction == ListDirection.Vertical;
+
+            if (_Direction == ListDirection.Horizontal) {
+                ScrollRect.content.anchorMin = new Vector2(0, 0);
+                ScrollRect.content.anchorMax = new Vector2(0, 1);
+                ScrollRect.content.pivot = new Vector2(0, 1);
+            } else {
+                ScrollRect.content.anchorMin = new Vector2(0, 1);
+                ScrollRect.content.anchorMax = new Vector2(1, 1);
+                ScrollRect.content.pivot = new Vector2(0, 1);
+            }
 
             _ItemViewTemplate.gameObject.SetActive(false);
 
             _ItemViewPool = new ObjectPool<ListItemView>(
                 createFunc: () => {
-                    ListItemView itemView = Instantiate(_ItemViewTemplate, content);
-                    var rt = itemView.transform as RectTransform;
+                    ListItemView itemView = Instantiate(_ItemViewTemplate, ScrollRect.content);
                     if (_Direction == ListDirection.Horizontal) {
-                        rt.anchorMin = new Vector2(0, 0.5f);
-                        rt.anchorMax = new Vector2(0, 0.5f);
-                        rt.pivot = new Vector2(0, 0.5f);
+                        itemView.Rect.anchorMin = new Vector2(0, 0.5f);
+                        itemView.Rect.anchorMax = new Vector2(0, 0.5f);
+                        itemView.Rect.pivot = new Vector2(0, 0.5f);
                     } else {
-                        rt.anchorMin = new Vector2(0.5f, 1);
-                        rt.anchorMax = new Vector2(0.5f, 1);
-                        rt.pivot = new Vector2(0.5f, 1);
+                        itemView.Rect.anchorMin = new Vector2(0.5f, 1);
+                        itemView.Rect.anchorMax = new Vector2(0.5f, 1);
+                        itemView.Rect.pivot = new Vector2(0.5f, 1);
                     }
                     return itemView;
                 },
@@ -281,14 +315,14 @@ namespace UnityCommon
         {
             base.OnEnable();
 
-            onValueChanged.AddListener(OnValueChanged);
+            ScrollRect.onValueChanged.AddListener(OnValueChanged);
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
 
-            onValueChanged.RemoveListener(OnValueChanged);
+            ScrollRect.onValueChanged.RemoveListener(OnValueChanged);
         }
 
         private void OnValueChanged(Vector2 value)
@@ -296,10 +330,22 @@ namespace UnityCommon
             _NeedToRefresh = true;
         }
 
-        protected override void LateUpdate()
+        protected override void OnDestroy()
         {
-            base.LateUpdate();
+            base.OnDestroy();
 
+            _ItemViewPool.Clear();
+            _ScrollRect = null;
+            _Rect = null;
+        }
+
+        public override bool IsActive()
+        {
+            return base.IsActive() && ScrollRect.IsActive();
+        }
+
+        protected virtual void LateUpdate()
+        {
             if (!IsActive() || !_NeedToRefresh) {
                 return;
             }
@@ -307,13 +353,6 @@ namespace UnityCommon
 
             RefreshContentSize();
             RefreshListView();
-        }
-
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-
-            _ItemViewPool?.Clear();
         }
 
         private void RefreshContentSize()
@@ -327,7 +366,7 @@ namespace UnityCommon
                 return;
             }
 
-            bool isInfiniteScroll = movementType == MovementType.Unrestricted;
+            bool isInfiniteScroll = ScrollRect.movementType == ScrollRect.MovementType.Unrestricted;
 
             int startIndex = (int)((-ContentPosition - Margin) / (ItemSize + _ItemSpacing));
             if (isInfiniteScroll) {
@@ -391,7 +430,7 @@ namespace UnityCommon
 
         private int CalcItemDataIndex(int itemIndex)
         {
-            if (movementType == MovementType.Unrestricted) {
+            if (ScrollRect.movementType == ScrollRect.MovementType.Unrestricted) {
                 return itemIndex < 0 ?
                     _ItemDatas.Count - 1 + ((itemIndex + 1) % _ItemDatas.Count) :
                     itemIndex % _ItemDatas.Count;

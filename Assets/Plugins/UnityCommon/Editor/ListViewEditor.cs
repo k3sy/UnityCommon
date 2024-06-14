@@ -1,11 +1,11 @@
 using UnityEditor;
-using UnityEditor.UI;
+using UnityEngine.UI;
 
 namespace UnityCommon
 {
     [CustomEditor(typeof(ListView), true)]
     [CanEditMultipleObjects]
-    public class ListViewEditor : ScrollRectEditor
+    public class ListViewEditor : Editor
     {
         private SerializedProperty _ItemViewTemplate;
         private SerializedProperty _ItemSpacing;
@@ -14,10 +14,8 @@ namespace UnityCommon
 
         private ListView _ListView;
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
-
             _ItemViewTemplate = serializedObject.FindProperty("_ItemViewTemplate");
             _ItemSpacing = serializedObject.FindProperty("_ItemSpacing");
             _Margin = serializedObject.FindProperty("_Margin");
@@ -29,23 +27,15 @@ namespace UnityCommon
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
-            EditorGUILayout.LabelField("List Settings", EditorStyles.boldLabel);
-            using (new EditorGUI.IndentLevelScope()) {
-                EditorGUILayout.PropertyField(_ItemViewTemplate);
-                EditorGUILayout.PropertyField(_ItemSpacing);
-                if (_ListView.movementType != ListView.MovementType.Unrestricted) {
-                    EditorGUILayout.PropertyField(_Margin);
-                }
-                EditorGUILayout.PropertyField(_Direction);
+
+            EditorGUILayout.PropertyField(_ItemViewTemplate);
+            EditorGUILayout.PropertyField(_ItemSpacing);
+            if (_ListView.ScrollRect.movementType != ScrollRect.MovementType.Unrestricted) {
+                EditorGUILayout.PropertyField(_Margin);
             }
+            EditorGUILayout.PropertyField(_Direction);
+
             serializedObject.ApplyModifiedProperties();
-
-            EditorGUILayout.Space();
-
-            EditorGUILayout.LabelField("Scroll Settings", EditorStyles.boldLabel);
-            using (new EditorGUI.IndentLevelScope()) {
-                base.OnInspectorGUI();
-            }
         }
     }
 }
