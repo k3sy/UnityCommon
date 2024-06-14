@@ -28,9 +28,9 @@ namespace UnityCommon
         private bool _NeedToRefresh;
 
         /// <summary>
-        /// テンプレートとなる要素の位置
+        /// 要素のサイズ
         /// </summary>
-        protected float ItemSize
+        protected internal float ItemSize
         {
             get {
                 var rt = _ItemViewTemplate.transform as RectTransform;
@@ -39,9 +39,14 @@ namespace UnityCommon
         }
 
         /// <summary>
-        /// 要素間の距離
+        /// 要素ごとの間隔
         /// </summary>
         protected float ItemSpacing => _ItemSpacing;
+
+        /// <summary>
+        /// 余白のサイズ
+        /// </summary>
+        protected float Margin => movementType == MovementType.Unrestricted ? _ItemSpacing * 0.5f : _Margin;
 
         /// <summary>
         /// リストの方向
@@ -73,14 +78,28 @@ namespace UnityCommon
         }
 
         /// <summary>
-        /// 無限スクロールかどうか
+        /// リストビューのサイズ
         /// </summary>
-        protected internal bool IsInfiniteScroll => movementType == MovementType.Unrestricted;
+        protected float ViewSize
+        {
+            get {
+                var rt = transform as RectTransform;
+                return _Direction == ListDirection.Horizontal ? rt.sizeDelta.x : rt.sizeDelta.y;
+            }
+        }
 
         /// <summary>
-        /// ビューポートのサイズ
+        /// コンテンツ領域のサイズ
         /// </summary>
-        protected float ViewportSize => _Direction == ListDirection.Horizontal ? viewport.rect.width : viewport.rect.height;
+        protected float ContentSize
+        {
+            get => _Direction == ListDirection.Horizontal ? content.sizeDelta.x : content.sizeDelta.y;
+            private set {
+                Vector2 temp = content.sizeDelta;
+                if (_Direction == ListDirection.Horizontal) { temp.x = value; } else { temp.y = value; }
+                content.sizeDelta = temp;
+            }
+        }
 
         /// <summary>
         /// コンテンツ領域の位置
@@ -94,18 +113,6 @@ namespace UnityCommon
                 content.anchoredPosition = temp;
             }
         }
-
-        private float ContentSize
-        {
-            get => _Direction == ListDirection.Horizontal ? content.sizeDelta.x : content.sizeDelta.y;
-            set {
-                Vector2 temp = content.sizeDelta;
-                if (_Direction == ListDirection.Horizontal) { temp.x = value; } else { temp.y = value; }
-                content.sizeDelta = temp;
-            }
-        }
-
-        private float Margin => IsInfiniteScroll ? _ItemSpacing * 0.5f : _Margin;
 
         /// <summary>
         /// 末尾にデータを追加する
@@ -293,7 +300,7 @@ namespace UnityCommon
         {
             base.LateUpdate();
 
-            if (!IsActive() || ViewportSize == 0 || !_NeedToRefresh) {
+            if (!IsActive() || !_NeedToRefresh) {
                 return;
             }
             _NeedToRefresh = false;
@@ -320,8 +327,10 @@ namespace UnityCommon
                 return;
             }
 
+            bool isInfiniteScroll = movementType == MovementType.Unrestricted;
+
             int startIndex = (int)((-ContentPosition - Margin) / (ItemSize + _ItemSpacing));
-            if (IsInfiniteScroll) {
+            if (isInfiniteScroll) {
                 if (startIndex <= 0) { startIndex -= 1; }
             } else {
                 if (startIndex < 0) { startIndex = 0; }
@@ -330,9 +339,9 @@ namespace UnityCommon
             int endIndex;
             for (endIndex = startIndex; ; endIndex++) {
                 float itemPosition = CalcItemPosition(endIndex);
-                if (itemPosition <= -(ItemSize + _ItemSpacing)) { continue; }
-                if (ViewportSize + _ItemSpacing <= itemPosition) { break; }
-                if (!IsInfiniteScroll && endIndex == _ItemDatas.Count) { break; }
+                if (itemPosition <= -(ItemSize + _ItemSpacing)) { startIndex++; continue; }
+                if (ViewSize + _ItemSpacing <= itemPosition) { break; }
+                if (!isInfiniteScroll && endIndex == _ItemDatas.Count) { break; }
             }
 
             LinkedListNode<ListItemView> node = _VisibleItemViews.First;
@@ -382,7 +391,7 @@ namespace UnityCommon
 
         private int CalcItemDataIndex(int itemIndex)
         {
-            if (IsInfiniteScroll) {
+            if (movementType == MovementType.Unrestricted) {
                 return itemIndex < 0 ?
                     _ItemDatas.Count - 1 + ((itemIndex + 1) % _ItemDatas.Count) :
                     itemIndex % _ItemDatas.Count;

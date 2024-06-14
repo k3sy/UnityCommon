@@ -43,6 +43,11 @@ namespace UnityCommon
             }
         }
 
+        /// <summary>
+        /// ListView上の中心位置
+        /// </summary>
+        public float Center => Position + _ListView.ItemSize * 0.5f;
+
         protected override void Awake()
         {
             base.Awake();
