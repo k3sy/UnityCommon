@@ -6,28 +6,15 @@ namespace UnityCommon
     [CanEditMultipleObjects]
     public class ListViewSnapEditor : ListViewEditor
     {
-        private SerializedProperty _LerpDuration;
-        private SerializedProperty _OnChangeItemData;
-
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-
-            _LerpDuration = serializedObject.FindProperty("_LerpDuration");
-            _OnChangeItemData = serializedObject.FindProperty("OnChangeItemData");
-        }
-
         public override void OnInspectorGUI()
         {
-            base.OnInspectorGUI();
-
-            EditorGUILayout.Space();
-
             serializedObject.Update();
-
-            EditorGUILayout.PropertyField(_LerpDuration);
-            EditorGUILayout.PropertyField(_OnChangeItemData);
-
+            SerializedProperty iterator = serializedObject.GetIterator();
+            iterator.NextVisible(true);
+            while (iterator.NextVisible(false)) {
+                if (iterator.name == "_MaxColumnCount") { continue; }
+                EditorGUILayout.PropertyField(iterator, true);
+            }
             serializedObject.ApplyModifiedProperties();
         }
     }

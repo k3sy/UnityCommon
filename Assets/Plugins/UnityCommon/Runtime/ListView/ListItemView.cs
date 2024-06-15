@@ -43,14 +43,17 @@ namespace UnityCommon
         /// </summary>
         public IListItemData Data { get; internal set; }
 
-        internal float Position
+        /// <summary>
+        /// ListView上の行方向の位置
+        /// </summary>
+        protected internal float RowPosition
         {
             get {
-                return ListView.IsHorizontalScroll ?
-                    Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x :
-                    -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y);
+                return ListView.IsHorizontalScroll
+                    ? Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x
+                    : -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y);
             }
-            set {
+            internal set {
                 Vector2 temp = Rect.anchoredPosition;
                 if (ListView.IsHorizontalScroll) {
                     temp.x = value - ListView.ScrollRect.content.anchoredPosition.x;
@@ -61,7 +64,28 @@ namespace UnityCommon
             }
         }
 
-        internal float Center => Position + ListView.ItemSize * 0.5f;
+        /// <summary>
+        /// ListView上の列方向の位置
+        /// </summary>
+        protected internal float ColumnPosition
+        {
+            get {
+                return ListView.IsHorizontalScroll
+                    ? -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y)
+                    : Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x;
+            }
+            internal set {
+                Vector2 temp = Rect.anchoredPosition;
+                if (ListView.IsHorizontalScroll) {
+                    temp.y = -value - ListView.ScrollRect.content.anchoredPosition.y;
+                } else {
+                    temp.x = value - ListView.ScrollRect.content.anchoredPosition.x;
+                }
+                Rect.anchoredPosition = temp;
+            }
+        }
+
+        internal float RowCenter => RowPosition + ListView.ItemRowSize * 0.5f;
 
         protected override void OnDestroy()
         {

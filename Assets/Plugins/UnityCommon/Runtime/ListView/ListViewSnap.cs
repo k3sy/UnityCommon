@@ -97,7 +97,7 @@ namespace UnityCommon
             }
 
             if (ScrollRect.movementType == ScrollRect.MovementType.Elastic) {
-                if (ContentPosition > 0.01f || ContentPosition + Mathf.Max(ContentSize - ViewSize, 0) < -0.01f) {
+                if (ContentRowPosition > 0.01f || ContentRowPosition + Mathf.Max(ContentRowSize - ViewRowSize, 0) < -0.01f) {
                     return;
                 }
             }
@@ -105,9 +105,9 @@ namespace UnityCommon
             float snapPosition = GetSnapPosition();
             _NearestItemView = GetNearestItemView(snapPosition);
 
-            float snapVector = snapPosition - _NearestItemView.Center;
+            float snapVector = snapPosition - _NearestItemView.RowCenter;
             float snapDistance = Mathf.Abs(snapVector);
-            if (_NearestItemView.Data != SnappedItemData && snapDistance < ItemSize) {
+            if (_NearestItemView.Data != SnappedItemData && snapDistance < ItemRowSize) {
                 OnChangeItemData.Invoke(_NearestItemView.Data);
                 SnappedItemData = _NearestItemView.Data;
             }
@@ -117,12 +117,12 @@ namespace UnityCommon
                     if (snapDistance <= 0.01f) { break; }
                     if (ScrollRect.velocity.magnitude > snapDistance / _LerpDuration) { break; }
                     ScrollRect.StopMovement();
-                    StartLerping(ContentPosition + snapVector);
+                    StartLerping(ContentRowPosition + snapVector);
                     break;
                 case State.JumpTo: {
                     ScrollRect.StopMovement();
                     int snapItemIndex = GetSnapItemIndex(_DestItemData);
-                    ContentPosition = GetSnappedContentPosition(snapPosition, snapItemIndex);
+                    ContentRowPosition = GetSnappedContentPosition(snapPosition, snapItemIndex);
                     _State = State.Idle;
                     break;
                 }
@@ -142,7 +142,7 @@ namespace UnityCommon
         private void StartLerping(float endPosition)
         {
             _LerpStartTime = Time.time;
-            _LerpStartPosition = ContentPosition;
+            _LerpStartPosition = ContentRowPosition;
             _LerpEndPosition = endPosition;
             _State = State.Lerping;
         }
@@ -151,22 +151,22 @@ namespace UnityCommon
         {
             float t = (Time.time - _LerpStartTime) / _LerpDuration;
             if (t < 1) {
-                ContentPosition = Mathf.Lerp(_LerpStartPosition, _LerpEndPosition, t);
+                ContentRowPosition = Mathf.Lerp(_LerpStartPosition, _LerpEndPosition, t);
             } else {
-                ContentPosition = _LerpEndPosition;
+                ContentRowPosition = _LerpEndPosition;
                 _State = State.Idle;
             }
         }
 
         private float GetSnapPosition()
         {
-            return ItemSize * 0.5f + (ViewSize - ItemSize) * 0.5f;
+            return ItemRowSize * 0.5f + (ViewRowSize - ItemRowSize) * 0.5f;
         }
 
         private ListItemView GetNearestItemView(float snapPosition)
         {
             return VisibleItemViews
-                .OrderBy(itemView => Mathf.Abs(itemView.Center - snapPosition))
+                .OrderBy(itemView => Mathf.Abs(itemView.RowCenter - snapPosition))
                 .First();
         }
 
@@ -182,8 +182,8 @@ namespace UnityCommon
 
         private float GetSnappedContentPosition(float snapPosition, int snapItemIndex)
         {
-            return ContentPosition - (ItemSize + ItemSpacing) * (snapItemIndex - _NearestItemView.Index)
-                + (snapPosition - _NearestItemView.Center);
+            return ContentRowPosition - (ItemRowSize + ItemSpacing) * (snapItemIndex - _NearestItemView.Index)
+                + (snapPosition - _NearestItemView.RowCenter);
         }
     }
 }
