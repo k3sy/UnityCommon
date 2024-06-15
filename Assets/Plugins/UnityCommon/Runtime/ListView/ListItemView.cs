@@ -49,13 +49,13 @@ namespace UnityCommon
         public float Position
         {
             get {
-                return ListView.Direction == ListDirection.Horizontal ?
+                return ListView.IsHorizontalScroll ?
                     Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x :
                     -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y);
             }
             internal set {
                 Vector2 temp = Rect.anchoredPosition;
-                if (ListView.Direction == ListDirection.Horizontal) {
+                if (ListView.IsHorizontalScroll) {
                     temp.x = value - ListView.ScrollRect.content.anchoredPosition.x;
                 } else {
                     temp.y = -value - ListView.ScrollRect.content.anchoredPosition.y;

@@ -9,11 +9,6 @@ using UnityEngine.UI;
 namespace UnityCommon
 {
     /// <summary>
-    /// リストの方向
-    /// </summary>
-    public enum ListDirection { Horizontal, Vertical }
-
-    /// <summary>
     /// 必要最低限の要素を再利用する軽量なリストビュー
     /// </summary>
     [DisallowMultipleComponent]
@@ -23,7 +18,9 @@ namespace UnityCommon
         [SerializeField] private ListItemView _ItemViewTemplate;
         [SerializeField] private float _ItemSpacing;
         [SerializeField] private float _Margin;
-        [SerializeField] private ListDirection _Direction;
+
+        private enum Direction { Horizontal, Vertical }
+        [SerializeField] private Direction _Direction;
 
         private readonly List<IListItemData> _ItemDatas = new();
         private readonly LinkedList<ListItemView> _VisibleItemViews = new();
@@ -60,11 +57,14 @@ namespace UnityCommon
         protected internal bool IsInfiniteScroll => ScrollRect.movementType == ScrollRect.MovementType.Unrestricted;
 
         /// <summary>
+        /// 横スクロールかどうか
+        /// </summary>
+        protected internal bool IsHorizontalScroll => _Direction == Direction.Horizontal;
+
+        /// <summary>
         /// 要素のサイズ
         /// </summary>
-        protected internal float ItemSize => _Direction == ListDirection.Horizontal ?
-            _ItemViewTemplate.Rect.sizeDelta.x :
-            _ItemViewTemplate.Rect.sizeDelta.y;
+        protected internal float ItemSize => IsHorizontalScroll ? _ItemViewTemplate.Rect.sizeDelta.x : _ItemViewTemplate.Rect.sizeDelta.y;
 
         /// <summary>
         /// 要素ごとの間隔
@@ -75,11 +75,6 @@ namespace UnityCommon
         /// 余白のサイズ
         /// </summary>
         protected float Margin => IsInfiniteScroll ? _ItemSpacing * 0.5f : _Margin;
-
-        /// <summary>
-        /// リストの方向
-        /// </summary>
-        protected internal ListDirection Direction => _Direction;
 
         private ReadOnlyCollection<IListItemData> _ReadOnlyItemDatas;
         /// <summary>
@@ -108,21 +103,17 @@ namespace UnityCommon
         /// <summary>
         /// リストビューのサイズ
         /// </summary>
-        protected float ViewSize => _Direction == ListDirection.Horizontal ?
-            Rect.sizeDelta.x :
-            Rect.sizeDelta.y;
+        protected float ViewSize => IsHorizontalScroll ? Rect.sizeDelta.x : Rect.sizeDelta.y;
 
         /// <summary>
         /// コンテンツ領域のサイズ
         /// </summary>
         protected float ContentSize
         {
-            get => _Direction == ListDirection.Horizontal ?
-                ScrollRect.content.sizeDelta.x :
-                ScrollRect.content.sizeDelta.y;
+            get => IsHorizontalScroll ? ScrollRect.content.sizeDelta.x : ScrollRect.content.sizeDelta.y;
             private set {
                 Vector2 temp = ScrollRect.content.sizeDelta;
-                if (_Direction == ListDirection.Horizontal) { temp.x = value; } else { temp.y = value; }
+                if (IsHorizontalScroll) { temp.x = value; } else { temp.y = value; }
                 ScrollRect.content.sizeDelta = temp;
             }
         }
@@ -132,12 +123,10 @@ namespace UnityCommon
         /// </summary>
         protected float ContentPosition
         {
-            get => _Direction == ListDirection.Horizontal ?
-                ScrollRect.content.anchoredPosition.x :
-                -ScrollRect.content.anchoredPosition.y;
+            get => IsHorizontalScroll ? ScrollRect.content.anchoredPosition.x : -ScrollRect.content.anchoredPosition.y;
             set {
                 Vector2 temp = ScrollRect.content.anchoredPosition;
-                if (_Direction == ListDirection.Horizontal) { temp.x = value; } else { temp.y = -value; }
+                if (IsHorizontalScroll) { temp.x = value; } else { temp.y = -value; }
                 ScrollRect.content.anchoredPosition = temp;
             }
         }
@@ -278,10 +267,10 @@ namespace UnityCommon
         {
             base.Start();
 
-            ScrollRect.horizontal = _Direction == ListDirection.Horizontal;
-            ScrollRect.vertical = _Direction == ListDirection.Vertical;
+            ScrollRect.horizontal = IsHorizontalScroll;
+            ScrollRect.vertical = !IsHorizontalScroll;
 
-            if (_Direction == ListDirection.Horizontal) {
+            if (IsHorizontalScroll) {
                 ScrollRect.content.anchorMin = new Vector2(0, 0);
                 ScrollRect.content.anchorMax = new Vector2(0, 1);
                 ScrollRect.content.pivot = new Vector2(0, 1);
@@ -296,7 +285,7 @@ namespace UnityCommon
             _ItemViewPool = new ObjectPool<ListItemView>(
                 createFunc: () => {
                     ListItemView itemView = Instantiate(_ItemViewTemplate, ScrollRect.content);
-                    if (_Direction == ListDirection.Horizontal) {
+                    if (IsHorizontalScroll) {
                         itemView.Rect.anchorMin = new Vector2(0, 0.5f);
                         itemView.Rect.anchorMax = new Vector2(0, 0.5f);
                         itemView.Rect.pivot = new Vector2(0, 0.5f);
