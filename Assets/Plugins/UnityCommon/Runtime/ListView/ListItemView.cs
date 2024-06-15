@@ -43,17 +43,14 @@ namespace UnityCommon
         /// </summary>
         public IListItemData Data { get; internal set; }
 
-        /// <summary>
-        /// ListView上の位置
-        /// </summary>
-        public float Position
+        internal float Position
         {
             get {
                 return ListView.IsHorizontalScroll ?
                     Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x :
                     -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y);
             }
-            internal set {
+            set {
                 Vector2 temp = Rect.anchoredPosition;
                 if (ListView.IsHorizontalScroll) {
                     temp.x = value - ListView.ScrollRect.content.anchoredPosition.x;
@@ -64,10 +61,7 @@ namespace UnityCommon
             }
         }
 
-        /// <summary>
-        /// ListView上の中心位置
-        /// </summary>
-        public float Center => Position + ListView.ItemSize * 0.5f;
+        internal float Center => Position + ListView.ItemSize * 0.5f;
 
         protected override void OnDestroy()
         {
