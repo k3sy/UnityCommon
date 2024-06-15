@@ -1,5 +1,4 @@
 using UnityEditor;
-using UnityEngine.UI;
 
 namespace UnityCommon
 {
@@ -30,7 +29,7 @@ namespace UnityCommon
 
             EditorGUILayout.PropertyField(_ItemViewTemplate);
             EditorGUILayout.PropertyField(_ItemSpacing);
-            if (_ListView.ScrollRect.movementType != ScrollRect.MovementType.Unrestricted) {
+            if (!_ListView.IsInfiniteScroll) {
                 EditorGUILayout.PropertyField(_Margin);
             }
             EditorGUILayout.PropertyField(_Direction);

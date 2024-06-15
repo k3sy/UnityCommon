@@ -55,6 +55,11 @@ namespace UnityCommon
         }
 
         /// <summary>
+        /// 無限スクロールかどうか
+        /// </summary>
+        protected internal bool IsInfiniteScroll => ScrollRect.movementType == ScrollRect.MovementType.Unrestricted;
+
+        /// <summary>
         /// 要素のサイズ
         /// </summary>
         protected internal float ItemSize => _Direction == ListDirection.Horizontal ?
@@ -69,9 +74,7 @@ namespace UnityCommon
         /// <summary>
         /// 余白のサイズ
         /// </summary>
-        protected float Margin => ScrollRect.movementType == ScrollRect.MovementType.Unrestricted ?
-            _ItemSpacing * 0.5f :
-            _Margin;
+        protected float Margin => IsInfiniteScroll ? _ItemSpacing * 0.5f : _Margin;
 
         /// <summary>
         /// リストの方向
@@ -366,10 +369,8 @@ namespace UnityCommon
                 return;
             }
 
-            bool isInfiniteScroll = ScrollRect.movementType == ScrollRect.MovementType.Unrestricted;
-
             int startIndex = (int)((-ContentPosition - Margin) / (ItemSize + _ItemSpacing));
-            if (isInfiniteScroll) {
+            if (IsInfiniteScroll) {
                 if (startIndex <= 0) { startIndex -= 1; }
             } else {
                 if (startIndex < 0) { startIndex = 0; }
@@ -380,7 +381,7 @@ namespace UnityCommon
                 float itemPosition = CalcItemPosition(endIndex);
                 if (itemPosition <= -(ItemSize + _ItemSpacing)) { startIndex++; continue; }
                 if (ViewSize + _ItemSpacing <= itemPosition) { break; }
-                if (!isInfiniteScroll && endIndex == _ItemDatas.Count) { break; }
+                if (!IsInfiniteScroll && endIndex == _ItemDatas.Count) { break; }
             }
 
             LinkedListNode<ListItemView> node = _VisibleItemViews.First;
@@ -430,7 +431,7 @@ namespace UnityCommon
 
         private int CalcItemDataIndex(int itemIndex)
         {
-            if (ScrollRect.movementType == ScrollRect.MovementType.Unrestricted) {
+            if (IsInfiniteScroll) {
                 return itemIndex < 0 ?
                     _ItemDatas.Count - 1 + ((itemIndex + 1) % _ItemDatas.Count) :
                     itemIndex % _ItemDatas.Count;
