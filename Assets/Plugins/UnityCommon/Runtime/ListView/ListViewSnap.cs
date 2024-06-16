@@ -92,14 +92,16 @@ namespace UnityCommon
         {
             base.LateUpdate();
 
-            if (!IsActive() || !VisibleItemViews.Any()) {
+            if (!IsActive()) {
                 return;
             }
 
-            if (ScrollRect.movementType == ScrollRect.MovementType.Elastic) {
-                if (ContentRowPosition > 0.01f || ContentRowPosition + Mathf.Max(ContentRowSize - ViewRowSize, 0) < -0.01f) {
-                    return;
+            if (!VisibleItemViews.Any()) {
+                if (SnappedItemData != null) {
+                    OnChangeItemData.Invoke(null);
+                    SnappedItemData = null;
                 }
+                return;
             }
 
             float snapPosition = GetSnapPosition();
@@ -114,6 +116,7 @@ namespace UnityCommon
 
             switch (_State) {
                 case State.Idle:
+                    if (IsBouncing()) { break; }
                     if (snapDistance <= 0.01f) { break; }
                     if (ScrollRect.velocity.magnitude > snapDistance / _LerpDuration) { break; }
                     ScrollRect.StopMovement();
@@ -137,6 +140,17 @@ namespace UnityCommon
                     UpdateLerping();
                     break;
             }
+        }
+
+        private bool IsBouncing()
+        {
+            if (ScrollRect.movementType == ScrollRect.MovementType.Elastic) {
+                if (ContentRowPosition > 0.01f
+                    || ContentRowPosition + Mathf.Max(ContentRowSize - ViewRowSize, 0) < -0.01f) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void StartLerping(float endPosition)
