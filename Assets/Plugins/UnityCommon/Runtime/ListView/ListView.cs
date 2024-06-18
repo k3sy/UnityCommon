@@ -434,7 +434,8 @@ namespace UnityCommon
         private int CalcColumnCount()
         {
             float contentColumnSize = IsHorizontalScroll ? ScrollRect.content.rect.height : ScrollRect.content.rect.width;
-            return 1 + Mathf.FloorToInt(Mathf.Max(contentColumnSize - ColumnMargin * 2 - ItemColumnSize, 0) / (ItemColumnSize + ItemSpacing));
+            return 1 + Mathf.FloorToInt(
+                Mathf.Max(contentColumnSize - ColumnMargin * 2 - ItemColumnSize, 0) / (ItemColumnSize + ItemSpacing));
         }
 
         private float CalcContentRowSize(int rowCount)
@@ -445,9 +446,7 @@ namespace UnityCommon
         private int CalcItemDataIndex(int index)
         {
             if (IsInfiniteScroll) {
-                return index < 0
-                    ? _ItemDatas.Count - 1 + ((index + 1) % _ItemDatas.Count)
-                    : index % _ItemDatas.Count;
+                return index < 0 ? _ItemDatas.Count - 1 + ((index + 1) % _ItemDatas.Count) : index % _ItemDatas.Count;
             } else {
                 return Mathf.Clamp(index, 0, _ItemDatas.Count - 1);
             }
