@@ -86,11 +86,11 @@ namespace UnityCommon
         /// <summary>
         /// 要素の表示時に呼び出される
         /// </summary>
-        public virtual void OnVisible() { }
+        protected internal virtual void OnVisible() { }
 
         /// <summary>
         /// 要素の非表示時に呼び出される
         /// </summary>
-        public virtual void OnInvisible() { }
+        protected internal virtual void OnInvisible() { }
     }
 }

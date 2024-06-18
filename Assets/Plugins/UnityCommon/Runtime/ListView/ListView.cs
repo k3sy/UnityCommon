@@ -20,8 +20,7 @@ namespace UnityCommon
         [SerializeField] private ListItemView _ItemViewTemplate;
         [SerializeField] private float _ItemSpacing;
         [SerializeField] private float _RowMargin;
-        [SerializeField] private float _ColumnMargin;
-        [SerializeField] private int _MaxColumnCount = 1;
+        [SerializeField] private int _MaxColumns = 1;
 
         private readonly List<IListItemData> _ItemDatas = new();
         private readonly LinkedList<ListItemView> _VisibleItemViews = new();
@@ -55,37 +54,32 @@ namespace UnityCommon
         /// <summary>
         /// 無限スクロールかどうか
         /// </summary>
-        protected bool IsInfiniteScroll => ScrollRect.movementType == ScrollRect.MovementType.Unrestricted;
+        public bool IsInfiniteScroll => ScrollRect.movementType == ScrollRect.MovementType.Unrestricted;
 
         /// <summary>
         /// 横スクロールかどうか
         /// </summary>
-        protected internal bool IsHorizontalScroll => _Direction == Direction.Horizontal;
+        public bool IsHorizontalScroll => _Direction == Direction.Horizontal;
 
         /// <summary>
         /// 行方向の要素のサイズ
         /// </summary>
-        protected internal float ItemRowSize => IsHorizontalScroll ? _ItemViewTemplate.Rect.sizeDelta.x : _ItemViewTemplate.Rect.sizeDelta.y;
+        public float ItemRowSize => IsHorizontalScroll ? _ItemViewTemplate.Rect.sizeDelta.x : _ItemViewTemplate.Rect.sizeDelta.y;
 
         /// <summary>
         /// 列方向の要素のサイズ
         /// </summary>
-        protected float ItemColumnSize => IsHorizontalScroll ? _ItemViewTemplate.Rect.sizeDelta.y : _ItemViewTemplate.Rect.sizeDelta.x;
+        public float ItemColumnSize => IsHorizontalScroll ? _ItemViewTemplate.Rect.sizeDelta.y : _ItemViewTemplate.Rect.sizeDelta.x;
 
         /// <summary>
         /// 要素ごとの間隔
         /// </summary>
-        protected float ItemSpacing => _ItemSpacing;
+        public float ItemSpacing => _ItemSpacing;
 
         /// <summary>
         /// 行方向の余白のサイズ
         /// </summary>
-        protected float RowMargin => IsInfiniteScroll ? _ItemSpacing * 0.5f : _RowMargin;
-
-        /// <summary>
-        /// 列方向の余白のサイズ
-        /// </summary>
-        protected float ColumnMargin => _ColumnMargin;
+        public float RowMargin => IsInfiniteScroll ? _ItemSpacing * 0.5f : _RowMargin;
 
         private ReadOnlyCollection<IListItemData> _ReadOnlyItemDatas;
         /// <summary>
@@ -114,17 +108,17 @@ namespace UnityCommon
         /// <summary>
         /// リストビューの行方向のサイズ
         /// </summary>
-        protected float ViewRowSize => IsHorizontalScroll ? Rect.sizeDelta.x : Rect.sizeDelta.y;
+        public float ViewRowSize => IsHorizontalScroll ? Rect.sizeDelta.x : Rect.sizeDelta.y;
 
         /// <summary>
         /// リストビューの列方向のサイズ
         /// </summary>
-        protected float ViewColumnSize => IsHorizontalScroll ? Rect.sizeDelta.y : Rect.sizeDelta.x;
+        public float ViewColumnSize => IsHorizontalScroll ? Rect.sizeDelta.y : Rect.sizeDelta.x;
 
         /// <summary>
         /// コンテンツ領域の行方向のサイズ
         /// </summary>
-        protected float ContentRowSize
+        public float ContentRowSize
         {
             get => IsHorizontalScroll ? ScrollRect.content.sizeDelta.x : ScrollRect.content.sizeDelta.y;
             private set {
@@ -137,7 +131,7 @@ namespace UnityCommon
         /// <summary>
         /// コンテンツ領域の行方向の位置
         /// </summary>
-        protected float ContentRowPosition
+        public float ContentRowPosition
         {
             get => IsHorizontalScroll ? ScrollRect.content.anchoredPosition.x : -ScrollRect.content.anchoredPosition.y;
             set {
@@ -301,9 +295,15 @@ namespace UnityCommon
             _ItemViewPool = new ObjectPool<ListItemView>(
                 createFunc: () => {
                     ListItemView itemView = Instantiate(_ItemViewTemplate, ScrollRect.content);
-                    itemView.Rect.anchorMin = new Vector2(0, 1);
-                    itemView.Rect.anchorMax = new Vector2(0, 1);
-                    itemView.Rect.pivot = new Vector2(0.5f, 0.5f);
+                    if (IsHorizontalScroll) {
+                        itemView.Rect.anchorMin = new Vector2(0, 0.5f);
+                        itemView.Rect.anchorMax = new Vector2(0, 0.5f);
+                        itemView.Rect.pivot = new Vector2(0.5f, 0.5f);
+                    } else {
+                        itemView.Rect.anchorMin = new Vector2(0.5f, 1);
+                        itemView.Rect.anchorMax = new Vector2(0.5f, 1);
+                        itemView.Rect.pivot = new Vector2(0.5f, 0.5f);
+                    }
                     return itemView;
                 },
                 actionOnGet: itemView => itemView.gameObject.SetActive(true),
@@ -353,16 +353,16 @@ namespace UnityCommon
             }
             _NeedToRefresh = false;
 
-            int columnCount = CalcColumnCount();
-            if (_MaxColumnCount > 0 && columnCount > _MaxColumnCount) { columnCount = _MaxColumnCount; }
-            int rowCount = (_ItemDatas.Count + columnCount - 1) / columnCount;
-            ContentRowSize = CalcContentRowSize(rowCount);
-            RefreshListView(rowCount, columnCount);
+            int numColumns = CalcColumnCount();
+            if (_MaxColumns > 0 && numColumns > _MaxColumns) { numColumns = _MaxColumns; }
+            int numRows = (_ItemDatas.Count + numColumns - 1) / numColumns;
+            ContentRowSize = CalcContentRowSize(numRows);
+            RefreshListView(numRows, numColumns);
         }
 
-        private void RefreshListView(int rowCount, int columnCount)
+        private void RefreshListView(int numRows, int numColumns)
         {
-            if (rowCount == 0) {
+            if (numRows == 0) {
                 return;
             }
 
@@ -374,13 +374,13 @@ namespace UnityCommon
                 float rowPosition = CalcItemRowPosition(endRow);
                 if (rowPosition <= -(ItemRowSize + ItemSpacing) * 0.5f) { startRow++; continue; }
                 if (rowPosition >= ViewRowSize + (ItemRowSize + ItemSpacing) * 0.5f) { break; }
-                if (!IsInfiniteScroll && endRow == rowCount) { break; }
+                if (!IsInfiniteScroll && endRow == numRows) { break; }
             }
 
             LinkedListNode<ListItemView> node = _VisibleItemViews.First;
             while (node != null) {
                 LinkedListNode<ListItemView> nextNode = node.Next;
-                int row = node.Value.Index / columnCount;
+                int row = node.Value.Index / numColumns;
                 if (row < startRow || row >= endRow
                     || (!IsInfiniteScroll && node.Value.Index >= _ItemDatas.Count)) {
                     RemoveVisibleItemView(node.Value);
@@ -389,11 +389,11 @@ namespace UnityCommon
             }
 
             for (int row = startRow; row < endRow; row++) {
-                for (int column = 0; column < columnCount; column++) {
-                    int index = columnCount * row + column;
+                for (int column = 0; column < numColumns; column++) {
+                    int index = numColumns * row + column;
                     if (!IsInfiniteScroll && index == _ItemDatas.Count) { break; }
                     float rowPosition = CalcItemRowPosition(row);
-                    float columnPosition = CalcItemColumnPosition(column);
+                    float columnPosition = CalcItemColumnPosition(column, numColumns);
                     SetVisibleItemView(index, rowPosition, columnPosition);
                 }
             }
@@ -432,12 +432,12 @@ namespace UnityCommon
         private int CalcColumnCount()
         {
             float contentColumnSize = IsHorizontalScroll ? ScrollRect.content.rect.height : ScrollRect.content.rect.width;
-            return 1 + Mathf.FloorToInt(Mathf.Max(contentColumnSize - ColumnMargin * 2 - ItemColumnSize, 0) / (ItemColumnSize + ItemSpacing));
+            return 1 + Mathf.FloorToInt(Mathf.Max(contentColumnSize - ItemColumnSize, 0) / (ItemColumnSize + ItemSpacing));
         }
 
-        private float CalcContentRowSize(int rowCount)
+        private float CalcContentRowSize(int numRows)
         {
-            return RowMargin * 2 + ItemRowSize * rowCount + ItemSpacing * Mathf.Max(rowCount - 1, 0);
+            return RowMargin * 2 + ItemRowSize * numRows + ItemSpacing * Mathf.Max(numRows - 1, 0);
         }
 
         private int CalcItemDataIndex(int index)
@@ -451,12 +451,12 @@ namespace UnityCommon
 
         private float CalcItemRowPosition(int row)
         {
-            return RowMargin + (ItemRowSize + ItemSpacing) * row + ItemRowSize * 0.5f + ContentRowPosition;
+            return RowMargin + (ItemRowSize + ItemSpacing) * row + ContentRowPosition + ItemRowSize * 0.5f;
         }
 
-        private float CalcItemColumnPosition(int column)
+        private float CalcItemColumnPosition(int column, int numColumns)
         {
-            return ColumnMargin + (ItemColumnSize + ItemSpacing) * column + ItemColumnSize * 0.5f;
+            return (ItemColumnSize + ItemSpacing) * (-0.5f * (1 - numColumns % 2) - (numColumns - 1) / 2 + column);
         }
     }
 }
