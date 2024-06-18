@@ -303,7 +303,7 @@ namespace UnityCommon
                     ListItemView itemView = Instantiate(_ItemViewTemplate, ScrollRect.content);
                     itemView.Rect.anchorMin = new Vector2(0, 1);
                     itemView.Rect.anchorMax = new Vector2(0, 1);
-                    itemView.Rect.pivot = new Vector2(0, 1);
+                    itemView.Rect.pivot = new Vector2(0.5f, 0.5f);
                     return itemView;
                 },
                 actionOnGet: itemView => itemView.gameObject.SetActive(true),
@@ -372,8 +372,8 @@ namespace UnityCommon
             int endRow;
             for (endRow = startRow; ; endRow++) {
                 float rowPosition = CalcItemRowPosition(endRow);
-                if (rowPosition <= -(ItemRowSize + ItemSpacing)) { startRow++; continue; }
-                if (ViewRowSize + ItemSpacing <= rowPosition) { break; }
+                if (rowPosition <= -(ItemRowSize + ItemSpacing) * 0.5f) { startRow++; continue; }
+                if (rowPosition >= ViewRowSize + (ItemRowSize + ItemSpacing) * 0.5f) { break; }
                 if (!IsInfiniteScroll && endRow == rowCount) { break; }
             }
 
@@ -403,14 +403,12 @@ namespace UnityCommon
         {
             ListItemView itemView = _VisibleItemViews.FirstOrDefault(itemView => itemView.Index == index);
             if (itemView != null) {
-                itemView.RowPosition = rowPosition;
-                itemView.ColumnPosition = columnPosition;
+                itemView.UpdatePosition(rowPosition, columnPosition);
             } else {
                 itemView = _ItemViewPool.Get();
-                itemView.RowPosition = rowPosition;
-                itemView.ColumnPosition = columnPosition;
                 itemView.Index = index;
                 itemView.Data = _ItemDatas[CalcItemDataIndex(index)];
+                itemView.UpdatePosition(rowPosition, columnPosition);
                 itemView.OnVisible();
                 LinkedListNode<ListItemView> prevNode = _VisibleItemViews.Nodes()
                     .Where(node => node.Value.Index < index)
@@ -434,8 +432,7 @@ namespace UnityCommon
         private int CalcColumnCount()
         {
             float contentColumnSize = IsHorizontalScroll ? ScrollRect.content.rect.height : ScrollRect.content.rect.width;
-            return 1 + Mathf.FloorToInt(
-                Mathf.Max(contentColumnSize - ColumnMargin * 2 - ItemColumnSize, 0) / (ItemColumnSize + ItemSpacing));
+            return 1 + Mathf.FloorToInt(Mathf.Max(contentColumnSize - ColumnMargin * 2 - ItemColumnSize, 0) / (ItemColumnSize + ItemSpacing));
         }
 
         private float CalcContentRowSize(int rowCount)
@@ -454,12 +451,12 @@ namespace UnityCommon
 
         private float CalcItemRowPosition(int row)
         {
-            return RowMargin + (ItemRowSize + ItemSpacing) * row + ContentRowPosition;
+            return RowMargin + (ItemRowSize + ItemSpacing) * row + ItemRowSize * 0.5f + ContentRowPosition;
         }
 
         private float CalcItemColumnPosition(int column)
         {
-            return ColumnMargin + (ItemColumnSize + ItemSpacing) * column;
+            return ColumnMargin + (ItemColumnSize + ItemSpacing) * column + ItemColumnSize * 0.5f;
         }
     }
 }

@@ -46,46 +46,16 @@ namespace UnityCommon
         /// <summary>
         /// ListView上の行方向の位置
         /// </summary>
-        protected internal float RowPosition
-        {
-            get {
-                return ListView.IsHorizontalScroll
-                    ? Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x
-                    : -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y);
-            }
-            internal set {
-                Vector2 temp = Rect.anchoredPosition;
-                if (ListView.IsHorizontalScroll) {
-                    temp.x = value - ListView.ScrollRect.content.anchoredPosition.x;
-                } else {
-                    temp.y = -value - ListView.ScrollRect.content.anchoredPosition.y;
-                }
-                Rect.anchoredPosition = temp;
-            }
-        }
+        public float RowPosition => ListView.IsHorizontalScroll
+            ? Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x
+            : -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y);
 
         /// <summary>
         /// ListView上の列方向の位置
         /// </summary>
-        protected internal float ColumnPosition
-        {
-            get {
-                return ListView.IsHorizontalScroll
-                    ? -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y)
-                    : Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x;
-            }
-            internal set {
-                Vector2 temp = Rect.anchoredPosition;
-                if (ListView.IsHorizontalScroll) {
-                    temp.y = -value - ListView.ScrollRect.content.anchoredPosition.y;
-                } else {
-                    temp.x = value - ListView.ScrollRect.content.anchoredPosition.x;
-                }
-                Rect.anchoredPosition = temp;
-            }
-        }
-
-        internal float RowCenter => RowPosition + ListView.ItemRowSize * 0.5f;
+        public float ColumnPosition => ListView.IsHorizontalScroll
+            ? -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y)
+            : Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x;
 
         protected override void OnDestroy()
         {
@@ -93,6 +63,24 @@ namespace UnityCommon
 
             _ListView = null;
             _Rect = null;
+        }
+
+        /// <summary>
+        /// 要素の位置を更新する
+        /// </summary>
+        /// <param name="rowPosition">ListView上の行方向の位置</param>
+        /// <param name="columnPosition">ListView上の列方向の位置</param>
+        protected internal virtual void UpdatePosition(float rowPosition, float columnPosition)
+        {
+            Vector2 temp = Rect.anchoredPosition;
+            if (ListView.IsHorizontalScroll) {
+                temp.x = rowPosition - ListView.ScrollRect.content.anchoredPosition.x;
+                temp.y = -columnPosition - ListView.ScrollRect.content.anchoredPosition.y;
+            } else {
+                temp.x = columnPosition - ListView.ScrollRect.content.anchoredPosition.x;
+                temp.y = -rowPosition - ListView.ScrollRect.content.anchoredPosition.y;
+            }
+            Rect.anchoredPosition = temp;
         }
 
         /// <summary>

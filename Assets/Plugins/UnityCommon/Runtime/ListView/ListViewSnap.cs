@@ -107,7 +107,7 @@ namespace UnityCommon
             float snapPosition = GetSnapPosition();
             _NearestItemView = GetNearestItemView(snapPosition);
 
-            float snapVector = snapPosition - _NearestItemView.RowCenter;
+            float snapVector = snapPosition - _NearestItemView.RowPosition;
             float snapDistance = Mathf.Abs(snapVector);
             if (_NearestItemView.Data != SnappedItemData && snapDistance < ItemRowSize) {
                 OnChangeItemData.Invoke(_NearestItemView.Data);
@@ -180,7 +180,7 @@ namespace UnityCommon
         private ListItemView GetNearestItemView(float snapPosition)
         {
             return VisibleItemViews
-                .OrderBy(itemView => Mathf.Abs(itemView.RowCenter - snapPosition))
+                .OrderBy(itemView => Mathf.Abs(itemView.RowPosition - snapPosition))
                 .First();
         }
 
@@ -197,7 +197,7 @@ namespace UnityCommon
         private float GetSnappedContentPosition(float snapPosition, int snapItemIndex)
         {
             return ContentRowPosition - (ItemRowSize + ItemSpacing) * (snapItemIndex - _NearestItemView.Index)
-                + (snapPosition - _NearestItemView.RowCenter);
+                + (snapPosition - _NearestItemView.RowPosition);
         }
     }
 }
