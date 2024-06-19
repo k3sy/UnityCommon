@@ -12,7 +12,8 @@ namespace UnityCommon
     /// </summary>
     public class ListViewSnap : ListView, IBeginDragHandler, IEndDragHandler
     {
-        [SerializeField] private float _LerpDuration = 0.2f;
+        [SerializeField] private Ease _Ease = Ease.Linear;
+        [SerializeField] private float _EaseDuration = 0.2f;
 
         [Serializable]
         public class ItemDataEvent : UnityEvent<IListItemData> { }
@@ -21,13 +22,13 @@ namespace UnityCommon
         /// </summary>
         public ItemDataEvent OnChangeItemData = new();
 
-        private enum State { Idle, JumpTo, MoveTo, Lerping, Dragging }
+        private enum State { Idle, Jump, Move, Easing, Dragging }
         private State _State;
         private IListItemData _DestItemData;
         private ListItemView _NearestItemView;
-        private float _LerpStartTime;
-        private float _LerpStartPosition;
-        private float _LerpEndPosition;
+        private float _EaseStartTime;
+        private float _EaseStartPosition;
+        private float _EaseEndPosition;
 
         /// <summary>
         /// スナップしている要素のデータ
@@ -44,7 +45,7 @@ namespace UnityCommon
                 return;
             }
             _DestItemData = itemData;
-            _State = State.JumpTo;
+            _State = State.Jump;
         }
 
         /// <summary>
@@ -57,14 +58,14 @@ namespace UnityCommon
                 return;
             }
             _DestItemData = itemData;
-            _State = State.MoveTo;
+            _State = State.Move;
         }
 
         protected override void Start()
         {
             base.Start();
 
-            _State = State.JumpTo;
+            _State = State.Jump;
         }
 
         protected override void OnDisable()
@@ -118,26 +119,26 @@ namespace UnityCommon
                 case State.Idle:
                     if (IsBouncing()) { break; }
                     if (snapDistance <= 0.01f) { break; }
-                    if (ScrollRect.velocity.magnitude > snapDistance / _LerpDuration) { break; }
+                    if (ScrollRect.velocity.magnitude > snapDistance / _EaseDuration) { break; }
                     ScrollRect.StopMovement();
-                    StartLerping(ContentRowPosition + snapVector);
+                    StartEasing(ContentRowPosition + snapVector);
                     break;
-                case State.JumpTo: {
+                case State.Jump: {
                     ScrollRect.StopMovement();
                     int snapItemIndex = GetSnapItemIndex(_DestItemData);
                     ContentRowPosition = GetSnappedContentPosition(snapPosition, snapItemIndex);
                     _State = State.Idle;
                     break;
                 }
-                case State.MoveTo: {
+                case State.Move: {
                     ScrollRect.StopMovement();
                     int snapItemIndex = GetSnapItemIndex(_DestItemData);
                     float endPosition = GetSnappedContentPosition(snapPosition, snapItemIndex);
-                    StartLerping(endPosition);
+                    StartEasing(endPosition);
                     break;
                 }
-                case State.Lerping:
-                    UpdateLerping();
+                case State.Easing:
+                    UpdateEasing();
                     break;
             }
         }
@@ -153,21 +154,21 @@ namespace UnityCommon
             return false;
         }
 
-        private void StartLerping(float endPosition)
+        private void StartEasing(float endPosition)
         {
-            _LerpStartTime = Time.time;
-            _LerpStartPosition = ContentRowPosition;
-            _LerpEndPosition = endPosition;
-            _State = State.Lerping;
+            _EaseStartTime = Time.time;
+            _EaseStartPosition = ContentRowPosition;
+            _EaseEndPosition = endPosition;
+            _State = State.Easing;
         }
 
-        private void UpdateLerping()
+        private void UpdateEasing()
         {
-            float t = (Time.time - _LerpStartTime) / _LerpDuration;
+            float t = (Time.time - _EaseStartTime) / _EaseDuration;
             if (t < 1) {
-                ContentRowPosition = Mathf.Lerp(_LerpStartPosition, _LerpEndPosition, t);
+                ContentRowPosition = Mathf.Lerp(_EaseStartPosition, _EaseEndPosition, _Ease.GetEasingFunction()(t));
             } else {
-                ContentRowPosition = _LerpEndPosition;
+                ContentRowPosition = _EaseEndPosition;
                 _State = State.Idle;
             }
         }
