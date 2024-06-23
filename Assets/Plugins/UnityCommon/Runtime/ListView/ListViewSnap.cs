@@ -77,7 +77,7 @@ namespace UnityCommon
 
         public virtual void OnBeginDrag(PointerEventData eventData)
         {
-            if (eventData.button == PointerEventData.InputButton.Left && IsActive()) {
+            if (eventData.button == PointerEventData.InputButton.Left && ScrollRect.IsActive()) {
                 _State = State.Dragging;
             }
         }
@@ -93,7 +93,7 @@ namespace UnityCommon
         {
             base.LateUpdate();
 
-            if (!IsActive()) {
+            if (!ScrollRect.IsActive()) {
                 return;
             }
 

@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.Pool;
 using UnityEngine.UI;
 
@@ -13,7 +12,7 @@ namespace UnityCommon
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ScrollRect))]
-    public class ListView : UIBehaviour
+    public class ListView : MonoBehaviour
     {
         private enum Direction { Horizontal, Vertical }
         [SerializeField] private Direction _Direction;
@@ -273,10 +272,8 @@ namespace UnityCommon
             _NeedToRefresh = true;
         }
 
-        protected override void Start()
+        protected virtual void Start()
         {
-            base.Start();
-
             ScrollRect.horizontal = IsHorizontalScroll;
             ScrollRect.vertical = !IsHorizontalScroll;
 
@@ -313,17 +310,13 @@ namespace UnityCommon
             );
         }
 
-        protected override void OnEnable()
+        protected virtual void OnEnable()
         {
-            base.OnEnable();
-
             ScrollRect.onValueChanged.AddListener(OnValueChanged);
         }
 
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
-            base.OnDisable();
-
             ScrollRect.onValueChanged.RemoveListener(OnValueChanged);
         }
 
@@ -332,23 +325,9 @@ namespace UnityCommon
             _NeedToRefresh = true;
         }
 
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-
-            _ItemViewPool.Clear();
-            _ScrollRect = null;
-            _Rect = null;
-        }
-
-        public override bool IsActive()
-        {
-            return base.IsActive() && ScrollRect.IsActive();
-        }
-
         protected virtual void LateUpdate()
         {
-            if (!IsActive() || !_NeedToRefresh) {
+            if (!ScrollRect.IsActive() || !_NeedToRefresh) {
                 return;
             }
             _NeedToRefresh = false;
@@ -457,6 +436,13 @@ namespace UnityCommon
         private float CalcItemColumnPosition(int column, int numColumns)
         {
             return (ItemColumnSize + ItemSpacing) * (-0.5f * (1 - numColumns % 2) - (numColumns - 1) / 2 + column);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            _ItemViewPool.Clear();
+            _ScrollRect = null;
+            _Rect = null;
         }
     }
 }

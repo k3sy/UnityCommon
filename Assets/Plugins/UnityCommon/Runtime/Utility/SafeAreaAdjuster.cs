@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace UnityCommon
 {
@@ -9,7 +8,7 @@ namespace UnityCommon
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(RectTransform))]
-    public class SafeAreaAdjuster : UIBehaviour
+    public class SafeAreaAdjuster : MonoBehaviour
     {
         [Flags]
         private enum Edge
@@ -26,15 +25,13 @@ namespace UnityCommon
         private Rect _LastSafeArea = new(0, 0, 0, 0);
         private DrivenRectTransformTracker _DrivenRectTransformTracker;
 
-        protected override void Start()
+        private void Start()
         {
-            base.Start();
             ApplySafeArea();
         }
 
-        protected override void OnDisable()
+        private void OnDisable()
         {
-            base.OnDisable();
             _DrivenRectTransformTracker.Clear();
         }
 
