@@ -1,11 +1,12 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace UnityCommon
 {
     /// <summary>
     /// ListViewの要素を表す
     /// </summary>
-    public class ListItemView : MonoBehaviour
+    public class ListItemView : UIBehaviour
     {
         private RectTransform _Rect;
         /// <summary>
@@ -56,6 +57,14 @@ namespace UnityCommon
             ? -(Rect.anchoredPosition.y + ListView.ScrollRect.content.anchoredPosition.y)
             : Rect.anchoredPosition.x + ListView.ScrollRect.content.anchoredPosition.x;
 
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+
+            _ListView = null;
+            _Rect = null;
+        }
+
         /// <summary>
         /// 要素の位置を更新する
         /// </summary>
@@ -77,21 +86,11 @@ namespace UnityCommon
         /// <summary>
         /// 要素の表示時に呼び出される
         /// </summary>
-        protected internal virtual void OnVisible()
-        {
-        }
+        protected internal virtual void OnVisible() { }
 
         /// <summary>
         /// 要素の非表示時に呼び出される
         /// </summary>
-        protected internal virtual void OnInvisible()
-        {
-        }
-
-        protected virtual void OnDestroy()
-        {
-            _ListView = null;
-            _Rect = null;
-        }
+        protected internal virtual void OnInvisible() { }
     }
 }
