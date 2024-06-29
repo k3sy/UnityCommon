@@ -7,12 +7,12 @@ using UnityEngine;
 namespace UnityCommon
 {
     /// <summary>
-    /// TMProにルビ付きのテキストを設定する
+    /// TextMeshProにルビ付きのテキストを設定する
     /// </summary>
     [DisallowMultipleComponent]
     [ExecuteAlways]
     [RequireComponent(typeof(TMP_Text))]
-    public class TMProRubySetter : MonoBehaviour
+    public class TMP_RubySetter : MonoBehaviour
     {
         private const int RUBY_SIZE = 50;
 
@@ -75,16 +75,16 @@ namespace UnityCommon
                     }
                 }
 
-                // ruby要素をTMProのリッチテキストタグに変換したテキストを設定する
+                // ruby要素をTextMeshProのリッチテキストタグに変換してtextに設定する
                 Target.text = string.Concat(_TextNodes.Select(text => text.GetConvertedText(Target)));
+                Target.ForceMeshUpdate();
 
                 if (Target.enableAutoSizing) {
-                    // AutoSize有効時はForceMeshUpdate()内でフォントサイズが調整されるため
-                    // ForceMeshUpdate()を実行したあとにリッチテキストタグを設定しなおす
-                    Target.ForceMeshUpdate();
+                    // AutoSize有効時はForceMeshUpdate()内でフォントサイズが調整されるためリッチテキストタグを設定しなおす
                     Target.text = string.Concat(_TextNodes.Select(text => text.GetConvertedText(Target)));
                 } else if (_UseEasyBestFit) {
                     Target.EasyBestFit(_FontSizeMin, _FontSizeMax);
+                    Target.text = string.Concat(_TextNodes.Select(text => text.GetConvertedText(Target)));
                 }
             }
 
@@ -140,10 +140,10 @@ namespace UnityCommon
 
             public override string GetConvertedText(TMP_Text target)
             {
-                float scale = (target.isOrthographic ? 1 : 10)
+                float fontScale = (target.isOrthographic ? 1 : 10)
                     * (target.enableAutoSizing ? target.fontSize / target.fontSizeMax : 1);
-                float textWidth = target.GetPreferredValues(Text).x * scale;
-                float rubyWidth = target.GetPreferredValues(Ruby).x * scale * RUBY_SIZE / 100;
+                float textWidth = target.GetPreferredValues(Text).x * fontScale;
+                float rubyWidth = target.GetPreferredValues(Ruby).x * fontScale * RUBY_SIZE / 100;
                 float rubyOffset = -(textWidth + rubyWidth) * 0.5f;
                 string rubiedText = textWidth < rubyWidth
                     ? $"<nobr><space={(rubyWidth - textWidth) * 0.5f}>{Text}<space={rubyOffset}><voffset=1em><size={RUBY_SIZE}%>{Ruby}</size></voffset></nobr>"

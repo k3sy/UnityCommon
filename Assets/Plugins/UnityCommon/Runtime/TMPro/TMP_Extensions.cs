@@ -4,9 +4,9 @@ using UnityEngine;
 namespace UnityCommon
 {
     /// <summary>
-    /// TMProに対する拡張メソッド
+    /// TextMeshProに対する拡張メソッド
     /// </summary>
-    public static class TMProExtensions
+    public static class TMP_Extensions
     {
         /// <summary>
         /// テキストがRectに収まるようフォントサイズを調整する

@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace UnityCommon
 {
-    [CustomEditor(typeof(TMProRubySetter))]
+    [CustomEditor(typeof(TMP_RubySetter))]
     [CanEditMultipleObjects]
-    public class TMProRubySetterEditor : Editor
+    public class TMP_RubySetterEditor : Editor
     {
         private SerializedProperty _UneditedText;
         private SerializedProperty _UseEasyBestFit;
